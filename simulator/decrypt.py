@@ -1,62 +1,42 @@
-"""
-Hybrid Ransomware Recovery Script (Educational)
-
-Safety notes:
-- This script only decrypts files inside the local test_folder directory.
-- It is intended for controlled lab environments only.
-"""
+"""Decrypt .locked files in ../test_folder using simulator/key.key."""
 
 from pathlib import Path
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import padding
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-TEST_FOLDER = BASE_DIR / "test_folder"
-PRIVATE_KEY_PATH = BASE_DIR / "private.pem"
-ENCRYPTED_AES_KEY_PATH = BASE_DIR / "simulator" / "encrypted_aes_key.bin"
+from cryptography.fernet import Fernet, InvalidToken
+
+SIMULATOR_DIR = Path(__file__).resolve().parent
+TEST_FOLDER = (SIMULATOR_DIR / "../test_folder").resolve()
+KEY_PATH = SIMULATOR_DIR / "key.key"
 
 
 def is_inside_test_folder(path: Path) -> bool:
-    """Return True only when path is inside test_folder."""
+    """Safety check: only allow operations inside test_folder."""
     try:
-        path.resolve().relative_to(TEST_FOLDER.resolve())
+        path.resolve().relative_to(TEST_FOLDER)
         return True
     except ValueError:
         return False
 
 
-def decrypt_aes_key_with_rsa() -> bytes:
-    """Recover AES key by decrypting it with the RSA private key."""
-    private_key = serialization.load_pem_private_key(
-        PRIVATE_KEY_PATH.read_bytes(),
-        password=None,
-    )
-    encrypted_aes_key = ENCRYPTED_AES_KEY_PATH.read_bytes()
-
-    return private_key.decrypt(
-        encrypted_aes_key,
-        padding.OAEP(
-            mgf=padding.MGF1(algorithm=hashes.SHA256()),
-            algorithm=hashes.SHA256(),
-            label=None,
-        ),
-    )
+def load_key() -> bytes | None:
+    """Load key.key if available."""
+    if not KEY_PATH.exists():
+        print(f"Key file not found: {KEY_PATH}")
+        print("Run encrypt.py first to create key.key")
+        return None
+    return KEY_PATH.read_bytes()
 
 
 def decrypt_files() -> None:
-    """Decrypt every .locked file in test_folder and restore original names."""
     if not TEST_FOLDER.exists():
         print(f"test_folder not found: {TEST_FOLDER}")
         return
 
-    if not PRIVATE_KEY_PATH.exists() or not ENCRYPTED_AES_KEY_PATH.exists():
-        print("Missing private key or encrypted AES key. Run encrypt.py first.")
+    key = load_key()
+    if key is None:
         return
 
-    aes_key = decrypt_aes_key_with_rsa()
-    cipher = Fernet(aes_key)
-
+    cipher = Fernet(key)
     decrypted_count = 0
 
     for locked_file in TEST_FOLDER.rglob("*.locked"):
@@ -65,15 +45,19 @@ def decrypt_files() -> None:
         if not is_inside_test_folder(locked_file):
             continue
 
-        encrypted_data = locked_file.read_bytes()
-        plaintext = cipher.decrypt(encrypted_data)
+        try:
+            encrypted_data = locked_file.read_bytes()
+            plaintext = cipher.decrypt(encrypted_data)
+        except InvalidToken:
+            print(f"Skipped (invalid key or data): {locked_file.name}")
+            continue
 
-        restored_path = locked_file.with_name(locked_file.name[:-7])
+        restored_path = locked_file.with_name(locked_file.name[: -len(".locked")])
         restored_path.write_bytes(plaintext)
         locked_file.unlink()
 
         decrypted_count += 1
-        print(f"Decrypted: {locked_file.name} -> {restored_path.name}")
+        print(f"Restored: {locked_file.name} -> {restored_path.name}")
 
     print(f"Decryption complete. Total files restored: {decrypted_count}")
 

