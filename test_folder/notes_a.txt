@@ -1,0 +1,9 @@
+File: notes_a.txt
+Generated at: 2026-03-31T16:55:10
+Sandbox: test_folder
+
+This is safe test data for sandbox cybersecurity practice.
+Event sample: file created for training and testing.
+No real or sensitive files are used in this environment.
+No real or sensitive files are used in this environment.
+No real or sensitive files are used in this environment.

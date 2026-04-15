@@ -20,6 +20,7 @@ RAPID_CHANGE_THRESHOLD = 5
 
 def ensure_log_files() -> None:
     """Create logs folder and files when missing."""
+    # Keep all monitoring output under ../logs.
     LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
     if not LOG_FILE.exists():
         LOG_FILE.write_text("timestamp|event|path|classification|message\n", encoding="utf-8")
@@ -60,6 +61,7 @@ class RansomwareMonitor(FileSystemEventHandler):
             log_file.write(f"{timestamp}|{event_name}|{path_text}|{classification}|{message}\n")
 
     def register_change_and_get_count(self) -> int:
+        # Keep only recent event timestamps in a rolling 10-second window.
         now = time.time()
         self.event_times.append(now)
         while self.event_times and now - self.event_times[0] > WINDOW_SECONDS:
@@ -67,6 +69,7 @@ class RansomwareMonitor(FileSystemEventHandler):
         return len(self.event_times)
 
     def process_event(self, event_name: str, path: Path, note: str) -> None:
+        # Safety: ignore anything outside ../test_folder.
         if not is_inside_test_folder(path):
             return
 
@@ -117,9 +120,11 @@ class RansomwareMonitor(FileSystemEventHandler):
 
 
 def start_monitor() -> None:
+    # Step 1: ensure watched folder and log files exist.
     TEST_FOLDER.mkdir(parents=True, exist_ok=True)
     ensure_log_files()
 
+    # Step 2: set up watchdog observer.
     monitor = RansomwareMonitor()
     observer = Observer()
     observer.schedule(monitor, str(TEST_FOLDER), recursive=True)
@@ -129,6 +134,7 @@ def start_monitor() -> None:
 
     observer.start()
     try:
+        # Step 3: keep monitor process alive until user interrupts it.
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
