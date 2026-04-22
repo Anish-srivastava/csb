@@ -508,15 +508,16 @@
                     <i class="fas fa-unlock-alt"></i>
                 </div>
                 <div class="card-title">Decrypt Files</div>
-                <p class="card-desc">Recover encrypted files using the correct password to unlock access.</p>
+                <p class="card-desc">Restore encrypted files using the encryption key generated during the attack.</p>
                 <div class="button-group">
-                    <button class="decrypt-btn" id="decrypt-btn" onclick="showDecryptForm()">
+                    <button class="decrypt-btn" onclick="showDecryptKeyForm()">
                         <i class="fas fa-key"></i>
-                        Decrypt Files
+                        Decrypt with Key
                     </button>
                 </div>
-                <div class="hint">🔐 Password required</div>
+                <div class="hint">🔑 Encryption key required</div>
             </div>
+
         </div>
 
         <!-- LOGS SECTION -->
@@ -525,11 +526,36 @@
                 <h2><i class="fas fa-history"></i> Activity Logs</h2>
             </div>
             <div class="logs-body" id="logs-body">
+                {% if logs %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Event</th>
+                            <th>Path</th>
+                            <th>Classification</th>
+                            <th>Message</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td>{{ log.timestamp }}</td>
+                            <td>{{ log.event }}</td>
+                            <td style="font-family: monospace; font-size: 0.85rem;">{{ log.path }}</td>
+                            <td><span class="classification-badge {% if log.classification|lower == 'ransomware' %}ransomware{% else %}normal{% endif %}">{{ log.classification }}</span></td>
+                            <td>{{ log.message }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
                 <div class="no-logs">
                     <i class="fas fa-inbox"></i>
                     <p><strong>No logs yet</strong></p>
                     <p style="color: #cbd5e0;">Start the monitor and run attack simulation to see activity</p>
                 </div>
+                {% endif %}
             </div>
             <div style="padding: 12px 20px; background: #f7fafc; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
                 <span class="refresh-badge active">
@@ -555,35 +581,7 @@
     </div>
 
     <!-- ============================================
-         DECRYPT PASSWORD MODAL
-         ============================================ -->
-    <div id="decrypt-modal" style="display: none;" class="modal-overlay">
-        <div class="modal-content">
-            <h2>
-                <i class="fas fa-unlock-alt" style="color: #00f2fe;"></i> Unlock Files
-            </h2>
-            <p>Enter the password to decrypt your files.</p>
-
-            <div id="decrypt-error" class="modal-error"></div>
-
-            <form onsubmit="submitDecryptForm(event)" class="modal-form">
-               
-
-                <button type="button" onclick="showDecryptKeyForm()" class="encrypt-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                    <i class="fas fa-key"></i> Decrypt with Key
-                </button>
-                <button type="button" onclick="closeDecryptForm()" style="
-                    background: #e2e8f0;
-                    color: #2d3748;
-                ">
-                    Cancel
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- ============================================
-         DECRYPT WITH KEY MODAL (NEW)
+         DECRYPT WITH KEY MODAL
          ============================================ -->
     <div id="decrypt-key-modal" style="display: none;" class="modal-overlay">
         <div class="modal-content">
@@ -655,97 +653,30 @@
         }
 
         // ============================================
-        // DECRYPT FORM FUNCTIONS
+        // DECRYPT WITH KEY FUNCTIONS
         // ============================================
-        function showDecryptForm() {
-            document.getElementById('decrypt-modal').style.display = 'flex';
-            document.getElementById('decrypt-password').focus();
-        }
-
-        function closeDecryptForm() {
-            document.getElementById('decrypt-modal').style.display = 'none';
-            document.getElementById('decrypt-password').value = '';
-            document.getElementById('decrypt-error').style.display = 'none';
-        }
-
         function showDecryptKeyForm() {
-            document.getElementById('decrypt-modal').style.display = 'none';
             document.getElementById('decrypt-key-modal').style.display = 'flex';
-            document.getElementById('encrypt-key').focus();
+            const keyField = document.getElementById('encrypt-key');
+            if (keyField) {
+                keyField.focus();
+            }
         }
 
         function closeDecryptKeyForm() {
             document.getElementById('decrypt-key-modal').style.display = 'none';
-            document.getElementById('encrypt-key').value = '';
-            document.getElementById('decrypt-key-error').style.display = 'none';
-            document.getElementById('decrypt-modal').style.display = 'flex';
-        }
-
-        function submitDecryptForm(event) {
-            event.preventDefault();
-            const password = document.getElementById('decrypt-password').value;
-            const errorDiv = document.getElementById('decrypt-error');
-
-            if (!password.trim()) {
-                errorDiv.textContent = 'Password cannot be empty';
-                errorDiv.style.display = 'block';
-                return;
+            const keyField = document.getElementById('encrypt-key');
+            if (keyField) {
+                keyField.value = '';
             }
-
-            const formData = new FormData();
-            formData.append('password', password);
-
-            fetch('/decrypt_files', { method: 'POST', body: formData })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showMessage('Files decrypted successfully!', 'success');
-                        closeDecryptForm();
-                        updateLogs();
-                    } else {
-                        errorDiv.textContent = data.message || 'Decryption failed';
-                        errorDiv.style.display = 'block';
-                    }
-                })
-                .catch(err => {
-                    errorDiv.textContent = 'Error: ' + err.message;
-                    errorDiv.style.display = 'block';
-                    console.error('Decrypt failed:', err);
-                });
+            const errorDiv = document.getElementById('decrypt-key-error');
+            if (errorDiv) {
+                errorDiv.style.display = 'none';
+            }
         }
 
-        // ============================================
-        // DECRYPT WITH KEY FUNCTION (NO PASSWORD)
-        // ============================================
         function decryptWithKey() {
-            const btn = event.target;
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = '<span class="spinner"></span> Decrypting...';
-            btn.disabled = true;
-
-            fetch('/decrypt_with_key', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showMessage(data.message, 'success');
-                        closeDecryptForm();
-                        updateLogs();
-                    } else {
-                        const errorDiv = document.getElementById('decrypt-error');
-                        errorDiv.textContent = data.message || 'Decryption failed';
-                        errorDiv.style.display = 'block';
-                    }
-                })
-                .catch(err => {
-                    const errorDiv = document.getElementById('decrypt-error');
-                    errorDiv.textContent = 'Error: ' + err.message;
-                    errorDiv.style.display = 'block';
-                    console.error('Key decrypt failed:', err);
-                })
-                .finally(() => {
-                    btn.innerHTML = originalHTML;
-                    btn.disabled = false;
-                });
+            showDecryptKeyForm();
         }
 
         // ============================================
@@ -771,19 +702,57 @@
         // UPDATE LOGS FUNCTION
         // ============================================
         function updateLogs() {
-            fetch('/')
-                .then(response => response.text())
-                .then(html => {
-                    const parser = new DOMParser();
-                    const newDoc = parser.parseFromString(html, 'text/html');
-                    const newLogsBody = newDoc.querySelector('.logs-body');
-                    const oldLogsBody = document.querySelector('.logs-body');
+            fetch('/get_logs')
+                .then(response => response.json())
+                .then(data => {
+                    const logsBody = document.getElementById('logs-body');
+                    if (!logsBody) return;
                     
-                    if (newLogsBody && oldLogsBody) {
-                        oldLogsBody.innerHTML = newLogsBody.innerHTML;
+                    const logs = data.logs || [];
+                    
+                    if (logs.length === 0) {
+                        logsBody.innerHTML = `
+                            <div class="no-logs">
+                                <i class="fas fa-inbox"></i>
+                                <p><strong>No logs yet</strong></p>
+                                <p style="color: #cbd5e0;">Start the monitor and run attack simulation to see activity</p>
+                            </div>
+                        `;
+                        return;
                     }
+                    
+                    // Build table with logs
+                    let html = '<table><thead><tr><th>Timestamp</th><th>Event</th><th>Path</th><th>Classification</th><th>Message</th></tr></thead><tbody>';
+                    
+                    logs.forEach(log => {
+                        const badgeClass = log.classification.toLowerCase() === 'ransomware' ? 'ransomware' : 'normal';
+                        const badgeText = log.classification;
+                        
+                        html += `<tr>
+                            <td>${escapeHtml(log.timestamp)}</td>
+                            <td>${escapeHtml(log.event)}</td>
+                            <td style="font-family: monospace; font-size: 0.85rem;">${escapeHtml(log.path)}</td>
+                            <td><span class="classification-badge ${badgeClass}">${escapeHtml(badgeText)}</span></td>
+                            <td>${escapeHtml(log.message)}</td>
+                        </tr>`;
+                    });
+                    
+                    html += '</tbody></table>';
+                    logsBody.innerHTML = html;
                 })
                 .catch(err => console.error('Log update failed:', err));
+        }
+
+        // Helper function to escape HTML
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
         }
 
         // ============================================
@@ -791,12 +760,20 @@
         // ============================================
         function submitDecryptKeyForm(event) {
             event.preventDefault();
-            const key = document.getElementById('encrypt-key').value;
+            const keyField = document.getElementById('encrypt-key');
+            if (!keyField) {
+                console.error('encrypt-key field not found');
+                return;
+            }
+            
+            const key = keyField.value;
             const errorDiv = document.getElementById('decrypt-key-error');
 
             if (!key.trim()) {
-                errorDiv.textContent = 'Encryption key cannot be empty';
-                errorDiv.style.display = 'block';
+                if (errorDiv) {
+                    errorDiv.textContent = 'Encryption key cannot be empty';
+                    errorDiv.style.display = 'block';
+                }
                 return;
             }
 
@@ -817,14 +794,18 @@
                         closeDecryptForm();
                         updateLogs();
                     } else {
-                        errorDiv.textContent = data.message || 'Decryption failed';
-                        errorDiv.style.display = 'block';
+                        if (errorDiv) {
+                            errorDiv.textContent = data.message || 'Decryption failed';
+                            errorDiv.style.display = 'block';
+                        }
                         showMessage('Invalid key or decryption failed', 'error');
                     }
                 })
                 .catch(err => {
-                    errorDiv.textContent = 'Error: ' + err.message;
-                    errorDiv.style.display = 'block';
+                    if (errorDiv) {
+                        errorDiv.textContent = 'Error: ' + err.message;
+                        errorDiv.style.display = 'block';
+                    }
                     showMessage('Error: ' + err.message, 'error');
                 })
                 .finally(() => {

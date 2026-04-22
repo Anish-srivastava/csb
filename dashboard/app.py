@@ -130,12 +130,9 @@ def start_attack():
     })
 
 
-@app.route("/decrypt_files", methods=["GET", "POST"])
+@app.route("/decrypt_files", methods=["POST"])
 def decrypt_files():
-    """Show password form and decrypt only when password is correct."""
-    if request.method == "GET":
-        return render_template("decrypt.html")
-
+    """Decrypt files using password (POST only - forms are in index.html modal)."""
     entered_password = request.form.get("password", "")
     if not entered_password.strip():
         return jsonify({"success": False, "message": "Password is required"})
@@ -151,6 +148,13 @@ def decrypt_files():
         return jsonify({"success": False, "message": "Incorrect password"})
     
     return jsonify({"success": False, "message": f"Decryption failed. {error}"})
+
+
+@app.route("/get_logs", methods=["GET"])
+def get_logs():
+    """API endpoint that returns logs as JSON for AJAX updates."""
+    logs = read_logs()
+    return jsonify({"logs": logs})
 
 
 @app.route("/decrypt_with_key", methods=["POST"])

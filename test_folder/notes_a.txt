@@ -1,9 +1,9 @@
 File: notes_a.txt
-Generated at: 2026-03-31T16:55:10
+Generated at: 2026-04-20T17:42:52
 Sandbox: test_folder
 
-This is safe test data for sandbox cybersecurity practice.
+Hybrid ransomware simulation project dummy content.
+Log sample: normal write operation in test folder.
 Event sample: file created for training and testing.
-No real or sensitive files are used in this environment.
-No real or sensitive files are used in this environment.
-No real or sensitive files are used in this environment.
+Hybrid ransomware simulation project dummy content.
+Log sample: normal write operation in test folder.
