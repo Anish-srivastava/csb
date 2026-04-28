@@ -4,832 +4,589 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ransomware Simulation Dashboard</title>
+    <!-- Tailwind CSS CDN for Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Custom Tailwind config for colors and fonts -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        gray: {
+                            900: '#0f172a',
+                            800: '#1e293b',
+                            700: '#334155',
+                        },
+                        cyber: {
+                            red: '#ef4444',
+                            green: '#10b981',
+                            blue: '#3b82f6',
+                            cyan: '#06b6d4'
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['"Fira Code"', 'monospace', 'ui-monospace', 'SFMono-Regular'],
+                        sans: ['"Inter"', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
     <style>
-        /* ============================================
-           GLOBAL STYLES
-           ============================================ */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        /* Custom Animations and Scrollbar */
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap');
+        
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px 0;
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
         }
 
-        /* ============================================
-           HEADER
-           ============================================ */
-        .header {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            text-align: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            margin-bottom: 30px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
+        .font-mono {
+            font-family: 'Fira Code', monospace;
         }
 
-        .header h1 {
-            color: #fff;
-            font-size: 2rem;
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-        }
-
-        .header-subtitle {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 0.95rem;
-        }
-
-        /* ============================================
-           PAGE CONTAINER
-           ============================================ */
-        .page {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 16px 40px;
-        }
-
-        /* ============================================
-           CONTROLS GRID
-           ============================================ */
-        .controls-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        /* ============================================
-           CARDS
-           ============================================ */
-        .card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 16px;
-            padding: 28px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-            animation: slideIn 0.5s ease-out;
-            text-align: center;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.2);
-        }
-
-        .card-icon {
-            font-size: 2.5rem;
-            margin-bottom: 12px;
-            display: inline-block;
-        }
-
-        .card-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: #2d3748;
-            margin-bottom: 8px;
-        }
-
-        .card-desc {
-            color: #718096;
-            font-size: 0.9rem;
-            margin-bottom: 20px;
-            line-height: 1.5;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 10px;
-            flex-direction: column;
-        }
-
-        /* ============================================
-           BUTTONS
-           ============================================ */
-        button {
-            border: none;
-            border-radius: 10px;
-            padding: 14px 24px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
-        }
-
-        button:hover {
-            transform: scale(1.02);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-
-        button:active {
-            transform: scale(0.98);
-        }
-
-        button:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
-
-        .attack-btn {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-        }
-
-        .decrypt-btn {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
-        }
-
-        .encrypt-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .hint {
-            font-size: 0.8rem;
-            color: #a0aec0;
-            margin-top: 14px;
-            text-align: center;
-        }
-
-        /* ============================================
-           MESSAGES
-           ============================================ */
-        .message {
-            margin-bottom: 20px;
-            padding: 16px;
-            border-radius: 12px;
-            font-weight: 600;
-            animation: slideDown 0.3s ease-out;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .message.success {
-            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-            color: #22543d;
-            border: 1px solid #6ee7b7;
-        }
-
-        .message.error {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-            color: #742a2a;
-            border: 1px solid #fc8181;
-        }
-
-        /* ============================================
-           LOGS SECTION
-           ============================================ */
-        .logs-section {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-            animation: slideIn 0.5s ease-out 0.2s both;
-        }
-
-        .logs-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 20px;
-            color: white;
-        }
-
-        .logs-header h2 {
-            margin: 0;
-            font-size: 1.3rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .logs-body {
-            overflow-x: auto;
-        }
-
-        /* ============================================
-           TABLE STYLES
-           ============================================ */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th {
-            background: #f7fafc;
-            padding: 16px;
-            text-align: left;
-            font-weight: 600;
-            color: #2d3748;
-            border-bottom: 2px solid #e2e8f0;
-            font-size: 0.9rem;
-        }
-
-        td {
-            padding: 14px 16px;
-            border-bottom: 1px solid #e2e8f0;
-            font-size: 0.9rem;
-            color: #4a5568;
-        }
-
-        tbody tr {
-            transition: all 0.2s ease;
-        }
-
-        tbody tr:hover {
-            background: #f7fafc;
-        }
-
-        tbody tr:nth-child(odd) {
-            background: #fafbfc;
-        }
-
-        /* ============================================
-           BADGES
-           ============================================ */
-        .classification-badge {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .classification-badge.ransomware {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-        }
-
-        .classification-badge.normal {
-            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-            color: #22543d;
-        }
-
-        /* ============================================
-           NO LOGS STATE
-           ============================================ */
-        .no-logs {
-            padding: 60px 20px;
-            text-align: center;
-            color: #a0aec0;
-        }
-
-        .no-logs i {
-            font-size: 3rem;
-            color: #cbd5e0;
-            margin-bottom: 12px;
-        }
-
-        /* ============================================
-           REFRESH BADGE
-           ============================================ */
-        .refresh-badge {
-            display: inline-block;
-            background: #edf2f7;
-            color: #4a5568;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            margin-top: 10px;
-        }
-
-        .refresh-badge.active {
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-
-        /* ============================================
-           CODE BLOCKS
-           ============================================ */
-        code {
-            background: #f7fafc;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-        }
-
-        /* ============================================
-           MODAL STYLES
-           ============================================ */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 16px;
-            padding: 40px;
-            max-width: 400px;
-            width: 90%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            animation: slideIn 0.3s ease-out;
-        }
-
-        .modal-content h2 {
-            color: #2d3748;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .modal-content p {
-            color: #718096;
-            margin-bottom: 24px;
-        }
-
-        .modal-error {
-            display: none;
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-            color: #742a2a;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 16px;
-            font-weight: 600;
-        }
-
-        .modal-form {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .modal-form input {
-            padding: 12px;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        .modal-form input:focus {
-            outline: none;
-            border-color: #4facfe;
-            background: #f7fafc;
-        }
-
-        /* ============================================
-           SPINNER
-           ============================================ */
+        /* Spinner Animation */
         .spinner {
             display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(0, 0, 0, 0.1);
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 3px solid rgba(255,255,255,0.3);
             border-radius: 50%;
-            border-top-color: #667eea;
-            animation: spin 0.8s linear infinite;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
         }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
-        /* ============================================
-           RESPONSIVE DESIGN
-           ============================================ */
-        @media (max-width: 768px) {
-            .header h1 {
-                font-size: 1.5rem;
-            }
+        /* Fade-in Animation for New Logs */
+        .fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-            .controls-grid {
-                grid-template-columns: 1fr;
-            }
-
-            th, td {
-                padding: 10px;
-                font-size: 0.8rem;
-            }
-
-            button {
-                padding: 12px 16px;
-                font-size: 0.9rem;
-            }
-
-            .card {
-                padding: 20px;
-            }
+        /* Custom Scrollbar for Logs Table */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b; 
         }
     </style>
 </head>
-<body>
-    <!-- ============================================
-         HEADER
-         ============================================ -->
-    <div class="header">
-        <h1><i class="fas fa-shield-alt"></i> Ransomware Sandbox</h1>
-        <p class="header-subtitle">🔒 Educational Simulation & Detection System</p>
-    </div>
+<body class="min-h-screen flex flex-col">
 
-    <!-- ============================================
-         MAIN PAGE CONTAINER
-         ============================================ -->
-    <div class="page">
-        <!-- MESSAGE ALERT -->
-        <div id="message-container"></div>
-
-        <!-- CONTROL CARDS GRID -->
-        <div class="controls-grid">
-            <!-- ATTACK CARD -->
-            <div class="card">
-                <div class="card-icon" style="color: #f5576c;">
-                    <i class="fas fa-virus"></i>
+    <!-- Header Section -->
+    <header class="bg-gray-800 border-b border-gray-700 sticky top-0 z-50 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-cyber-red/10 rounded-lg">
+                    <i class="fas fa-shield-virus text-cyber-red text-xl"></i>
                 </div>
-                <div class="card-title">Simulate Attack</div>
-                <p class="card-desc">Start a controlled ransomware encryption simulation in the sandbox folder.</p>
-                <div class="button-group">
-                    <button class="attack-btn" id="attack-btn" onclick="startAttack()">
-                        <i class="fas fa-play-circle"></i>
-                        Start Attack
+                <div>
+                    <h1 class="text-xl font-bold text-white tracking-wide">Ransomware Sandbox</h1>
+                </div>
+            </div>
+            <div class="hidden sm:flex items-center gap-2 text-sm font-mono text-cyber-green bg-cyber-green/10 px-3 py-1.5 rounded-full border border-cyber-green/20">
+                <span class="relative flex h-2.5 w-2.5">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyber-green opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyber-green"></span>
+                </span>
+                System Online
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Messages Alert Box (Error/Success messages appear here) -->
+        <div id="message-container" class="mb-6 empty:hidden"></div>
+
+        <!-- Controls Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            
+            <!-- Attack Simulate Card -->
+            <div class="bg-gray-800 rounded-xl border border-gray-700 p-6 shadow-xl relative overflow-hidden group hover:border-cyber-red/50 transition-colors duration-300">
+                <div class="absolute top-0 right-0 p-4 opacity-10 text-6xl group-hover:opacity-20 group-hover:scale-110 transition-all duration-500">
+                    <i class="fas fa-biohazard text-cyber-red"></i>
+                </div>
+                
+                <div class="relative z-10">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="flex items-center justify-center w-10 h-10 rounded-lg bg-cyber-red/20 text-cyber-red">
+                            <i class="fas fa-virus"></i>
+                        </span>
+                        <h2 class="text-lg font-semibold text-white">Start Attack Simulation</h2>
+                    </div>
+                    <p class="text-gray-400 text-sm mb-6 h-10">Start a controlled ransomware encryption process in the safe test environment (test_folder).</p>
+                    
+                    <button id="attack-btn" onclick="startAttack()" class="w-full bg-cyber-red hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:shadow-[0_0_25px_rgba(239,68,68,0.5)] transition-all duration-300 flex items-center justify-center gap-2">
+                        <i class="fas fa-play"></i>
+                        Start Simulation
                     </button>
+                    <p class="text-xs text-gray-500 mt-3 text-center font-mono"><i class="fas fa-exclamation-triangle text-yellow-500"></i> Only the test folder will be affected</p>
                 </div>
-                <div class="hint">⚠️ Safe - Only affects test_folder</div>
             </div>
 
-            <!-- DECRYPT CARD -->
-            <div class="card">
-                <div class="card-icon" style="color: #00f2fe;">
-                    <i class="fas fa-unlock-alt"></i>
+            <!-- Decrypt Card -->
+            <div class="bg-gray-800 rounded-xl border border-gray-700 p-6 shadow-xl relative overflow-hidden group hover:border-cyber-cyan/50 transition-colors duration-300">
+                <div class="absolute top-0 right-0 p-4 opacity-10 text-6xl group-hover:opacity-20 group-hover:scale-110 transition-all duration-500">
+                    <i class="fas fa-file-shield text-cyber-cyan"></i>
                 </div>
-                <div class="card-title">Decrypt Files</div>
-                <p class="card-desc">Restore encrypted files using the encryption key generated during the attack.</p>
-                <div class="button-group">
-                    <button class="decrypt-btn" onclick="showDecryptKeyForm()">
+                
+                <div class="relative z-10">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="flex items-center justify-center w-10 h-10 rounded-lg bg-cyber-cyan/20 text-cyber-cyan">
+                            <i class="fas fa-unlock-keyhole"></i>
+                        </span>
+                        <h2 class="text-lg font-semibold text-white">Decrypt Files</h2>
+                    </div>
+                    <p class="text-gray-400 text-sm mb-6 h-10">Use the encryption key generated after the attack to restore files to their original state.</p>
+                    
+                    <button onclick="showDecryptKeyForm()" class="w-full bg-gray-700 hover:bg-gray-600 border border-gray-600 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 group-hover:border-cyber-cyan/50 group-hover:text-cyber-cyan">
                         <i class="fas fa-key"></i>
                         Decrypt with Key
                     </button>
+                    <p class="text-xs text-gray-500 mt-3 text-center font-mono"><i class="fas fa-info-circle text-cyber-blue"></i> Valid Fernet Key required</p>
                 </div>
-                <div class="hint">🔑 Encryption key required</div>
             </div>
 
         </div>
 
-        <!-- LOGS SECTION -->
-        <section class="logs-section">
-            <div class="logs-header">
-                <h2><i class="fas fa-history"></i> Activity Logs</h2>
-            </div>
-            <div class="logs-body" id="logs-body">
-                {% if logs %}
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Timestamp</th>
-                            <th>Event</th>
-                            <th>Path</th>
-                            <th>Classification</th>
-                            <th>Message</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for log in logs %}
-                        <tr>
-                            <td>{{ log.timestamp }}</td>
-                            <td>{{ log.event }}</td>
-                            <td style="font-family: monospace; font-size: 0.85rem;">{{ log.path }}</td>
-                            <td><span class="classification-badge {% if log.classification|lower == 'ransomware' %}ransomware{% else %}normal{% endif %}">{{ log.classification }}</span></td>
-                            <td>{{ log.message }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <div class="no-logs">
-                    <i class="fas fa-inbox"></i>
-                    <p><strong>No logs yet</strong></p>
-                    <p style="color: #cbd5e0;">Start the monitor and run attack simulation to see activity</p>
+        <!-- Terminal Logs Section -->
+        <div class="bg-[#0a0f1c] rounded-xl border border-gray-700 shadow-2xl overflow-hidden flex flex-col h-[500px]">
+            <!-- Terminal Header -->
+            <div class="bg-gray-800 border-b border-gray-700 p-3 flex justify-between items-center select-none">
+                <div class="flex items-center gap-4">
+                    <div class="flex gap-1.5">
+                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                    </div>
+                    <button onclick="viewLogFile()" class="bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300 font-mono text-sm tracking-wider py-1 px-3 rounded-md flex items-center transition-colors focus:outline-none focus:ring-1 focus:ring-cyber-cyan shadow-sm">
+                        <i class="fas fa-terminal mr-2 text-cyber-cyan"></i>system_activity.log
+                    </button>
                 </div>
-                {% endif %}
+                <div class="flex items-center gap-3">
+                    <span class="text-xs text-gray-400 font-mono flex items-center gap-2">
+                        <i class="fas fa-sync-alt animate-spin text-gray-500" style="animation-duration: 3s;"></i> Auto-refresh 5s
+                    </span>
+                    <button onclick="updateLogs()" class="text-gray-400 hover:text-white transition-colors" title="Manually Refresh">
+                        <i class="fas fa-redo text-sm"></i>
+                    </button>
+                </div>
             </div>
-            <div style="padding: 12px 20px; background: #f7fafc; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-                <span class="refresh-badge active">
-                    <i class="fas fa-sync-alt"></i> Auto-refreshing every 5 seconds
-                </span>
-                <button onclick="decryptWithKey()" style="
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                    padding: 8px 16px;
-                    border: none;
-                    border-radius: 8px;
-                    font-size: 0.9rem;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    gap: 6px;
-                    width: auto;
-                ">
-                    <i class="fas fa-key"></i> Decrypt All with Key
-                </button>
-            </div>
-        </section>
-    </div>
-
-    <!-- ============================================
-         DECRYPT WITH KEY MODAL
-         ============================================ -->
-    <div id="decrypt-key-modal" style="display: none;" class="modal-overlay">
-        <div class="modal-content">
-            <h2>
-                <i class="fas fa-key" style="color: #667eea;"></i> Decrypt with Encryption Key
-            </h2>
-            <p>Paste your encryption key to decrypt files.</p>
-
-            <div id="decrypt-key-error" class="modal-error"></div>
-
-            <form onsubmit="submitDecryptKeyForm(event)" class="modal-form">
-                <textarea 
-                    id="encrypt-key" 
-                    placeholder="Paste your Fernet encryption key here (base64 format)"
-                    required
-                    autofocus
-                    style="
-                        width: 100%;
-                        padding: 12px;
-                        border: 2px solid #e2e8f0;
-                        border-radius: 8px;
-                        font-family: monospace;
-                        font-size: 12px;
-                        min-height: 80px;
-                        resize: vertical;
-                        margin-bottom: 16px;
-                    "
-                ></textarea>
-                <button type="submit" class="decrypt-btn">
-                    <i class="fas fa-unlock"></i> Verify & Decrypt
-                </button>
-                <button type="button" onclick="closeDecryptKeyForm()" style="
-                    background: #e2e8f0;
-                    color: #2d3748;
-                ">
-                    Back
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- ============================================
-         JAVASCRIPT - ALL FUNCTIONALITY IN ONE FILE
-         ============================================ -->
-    <script>
-        // ============================================
-        // START ATTACK FUNCTION
-        // ============================================
-        function startAttack() {
-            const btn = document.getElementById('attack-btn');
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = '<span class="spinner"></span> Running...';
-            btn.disabled = true;
-
-            fetch('/start_attack', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    showMessage(data.message, data.status);
-                    updateLogs();
-                })
-                .catch(err => {
-                    showMessage('Error: ' + err.message, 'error');
-                    console.error('Attack failed:', err);
-                })
-                .finally(() => {
-                    btn.innerHTML = originalHTML;
-                    btn.disabled = false;
-                });
-        }
-
-        // ============================================
-        // DECRYPT WITH KEY FUNCTIONS
-        // ============================================
-        function showDecryptKeyForm() {
-            document.getElementById('decrypt-key-modal').style.display = 'flex';
-            const keyField = document.getElementById('encrypt-key');
-            if (keyField) {
-                keyField.focus();
-            }
-        }
-
-        function closeDecryptKeyForm() {
-            document.getElementById('decrypt-key-modal').style.display = 'none';
-            const keyField = document.getElementById('encrypt-key');
-            if (keyField) {
-                keyField.value = '';
-            }
-            const errorDiv = document.getElementById('decrypt-key-error');
-            if (errorDiv) {
-                errorDiv.style.display = 'none';
-            }
-        }
-
-        function decryptWithKey() {
-            showDecryptKeyForm();
-        }
-
-        // ============================================
-        // MESSAGE DISPLAY FUNCTION
-        // ============================================
-        function showMessage(message, status) {
-            const container = document.getElementById('message-container');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${status}`;
-            messageDiv.innerHTML = `
-                ${status === 'error' ? '<i class="fas fa-exclamation-circle"></i>' : '<i class="fas fa-check-circle"></i>'}
-                <span>${message}</span>
-            `;
-            container.innerHTML = '';
-            container.appendChild(messageDiv);
-
-            setTimeout(() => {
-                messageDiv.remove();
-            }, 5000);
-        }
-
-        // ============================================
-        // UPDATE LOGS FUNCTION
-        // ============================================
-        function updateLogs() {
-            fetch('/get_logs')
-                .then(response => response.json())
-                .then(data => {
-                    const logsBody = document.getElementById('logs-body');
-                    if (!logsBody) return;
-                    
-                    const logs = data.logs || [];
-                    
-                    if (logs.length === 0) {
-                        logsBody.innerHTML = `
-                            <div class="no-logs">
-                                <i class="fas fa-inbox"></i>
-                                <p><strong>No logs yet</strong></p>
-                                <p style="color: #cbd5e0;">Start the monitor and run attack simulation to see activity</p>
-                            </div>
-                        `;
-                        return;
-                    }
-                    
-                    // Build table with logs
-                    let html = '<table><thead><tr><th>Timestamp</th><th>Event</th><th>Path</th><th>Classification</th><th>Message</th></tr></thead><tbody>';
-                    
-                    logs.forEach(log => {
-                        const badgeClass = log.classification.toLowerCase() === 'ransomware' ? 'ransomware' : 'normal';
-                        const badgeText = log.classification;
-                        
-                        html += `<tr>
-                            <td>${escapeHtml(log.timestamp)}</td>
-                            <td>${escapeHtml(log.event)}</td>
-                            <td style="font-family: monospace; font-size: 0.85rem;">${escapeHtml(log.path)}</td>
-                            <td><span class="classification-badge ${badgeClass}">${escapeHtml(badgeText)}</span></td>
-                            <td>${escapeHtml(log.message)}</td>
-                        </tr>`;
-                    });
-                    
-                    html += '</tbody></table>';
-                    logsBody.innerHTML = html;
-                })
-                .catch(err => console.error('Log update failed:', err));
-        }
-
-        // Helper function to escape HTML
-        function escapeHtml(text) {
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
-            return text.replace(/[&<>"']/g, m => map[m]);
-        }
-
-        // ============================================
-        // DECRYPT WITH KEY FUNCTION
-        // ============================================
-        function submitDecryptKeyForm(event) {
-            event.preventDefault();
-            const keyField = document.getElementById('encrypt-key');
-            if (!keyField) {
-                console.error('encrypt-key field not found');
-                return;
-            }
             
-            const key = keyField.value;
-            const errorDiv = document.getElementById('decrypt-key-error');
+            <!-- Terminal Body -->
+            <div class="flex-1 overflow-auto p-4 font-mono text-sm" id="logs-body">
+                <!-- Logs table will be rendered here via JavaScript -->
+                <div class="h-full flex flex-col items-center justify-center text-gray-500 space-y-4">
+                    <i class="fas fa-radar animate-pulse text-4xl"></i>
+                    <p>Loading logs or no activity yet...</p>
+                </div>
+            </div>
+        </div>
+    </main>
 
-            if (!key.trim()) {
-                if (errorDiv) {
-                    errorDiv.textContent = 'Encryption key cannot be empty';
-                    errorDiv.style.display = 'block';
+    <!-- Modal: Decryption Key Input -->
+    <div id="decrypt-key-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
+        <div class="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform scale-95 transition-transform duration-200" id="modal-content">
+            
+            <!-- Modal Header -->
+            <div class="border-b border-gray-700 bg-gray-800/50 p-5">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                        <i class="fas fa-key text-cyber-cyan"></i> Decryption Key
+                    </h2>
+                    <button type="button" onclick="closeDecryptKeyForm()" class="text-gray-400 hover:text-white transition-colors">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-5">
+                <p class="text-gray-400 text-sm mb-4">Paste your base64 Fernet encryption key below to decrypt target files.</p>
+                
+                <div id="decrypt-key-error" class="hidden bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm mb-4 font-mono"></div>
+
+                <form onsubmit="submitDecryptKeyForm(event)" class="space-y-4">
+                    <div>
+                        <textarea 
+                            id="encrypt-key" 
+                            placeholder="e.g. gAAAAAB..."
+                            required
+                            class="w-full bg-[#0a0f1c] border border-gray-600 rounded-lg p-3 text-cyber-green font-mono text-sm focus:outline-none focus:border-cyber-cyan focus:ring-1 focus:ring-cyber-cyan transition-colors h-28 resize-none placeholder-gray-600"
+                        ></textarea>
+                    </div>
+                    
+                    <div class="flex gap-3 pt-2">
+                        <button type="button" onclick="closeDecryptKeyForm()" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-medium py-2.5 px-4 rounded-lg transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" id="decrypt-submit-btn" class="flex-1 bg-cyber-cyan hover:bg-cyan-600 text-white font-medium py-2.5 px-4 rounded-lg transition-colors flex justify-center items-center gap-2">
+                            <i class="fas fa-unlock"></i> Decrypt
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: View Log File -->
+    <div id="log-file-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
+        <div class="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden transform scale-95 transition-transform duration-200 flex flex-col max-h-[85vh]" id="log-modal-content">
+            
+            <!-- Modal Header -->
+            <div class="border-b border-gray-700 bg-gray-800/50 p-5 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-file-text text-cyber-cyan text-xl"></i>
+                    <h2 class="text-xl font-bold text-white">Activity Log - <span id="log-filename">activity_log.txt</span></h2>
+                    <span class="text-xs text-gray-400 ml-2" id="log-line-count"></span>
+                </div>
+                <button type="button" onclick="closeLogFileModal()" class="text-gray-400 hover:text-white transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="flex-1 overflow-auto p-5 bg-[#0a0f1c]">
+                <pre id="log-file-content" class="text-gray-300 font-mono text-xs whitespace-pre-wrap break-words leading-relaxed"></pre>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="border-t border-gray-700 bg-gray-800/50 p-4 flex gap-3 justify-end">
+                <button type="button" onclick="downloadLogFile()" class="bg-cyber-blue hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2">
+                    <i class="fas fa-download"></i> Download
+                </button>
+                <button type="button" onclick="closeLogFileModal()" class="bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT -->
+    <script>
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements - initialized after page loads
+            const modal = document.getElementById('decrypt-key-modal');
+            const modalContent = document.getElementById('modal-content');
+            const logFileModal = document.getElementById('log-file-modal');
+            const logModalContent = document.getElementById('log-modal-content');
+
+            // ============================================
+            // View Log File Functions
+            // ============================================
+            window.viewLogFile = function() {
+                if (!logFileModal) return;
+                logFileModal.classList.remove('hidden');
+                logFileModal.classList.add('flex');
+                
+                // Fetch log file content from backend
+                fetch('/view_log_file')
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('log-filename').textContent = data.filename;
+                        document.getElementById('log-line-count').textContent = `(${data.lines} lines)`;
+                        document.getElementById('log-file-content').textContent = data.content || 'No log content available.';
+                        
+                        // Add animation
+                        setTimeout(() => {
+                            logModalContent.classList.remove('scale-95', 'opacity-0');
+                            logModalContent.classList.add('scale-100', 'opacity-100');
+                        }, 10);
+                    })
+                    .catch(err => {
+                        document.getElementById('log-file-content').textContent = 'Error loading log file.';
+                        console.error('Error fetching log file:', err);
+                    });
+            }
+
+            window.closeLogFileModal = function() {
+                if (!logModalContent || !logFileModal) return;
+                logModalContent.classList.remove('scale-100', 'opacity-100');
+                logModalContent.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    logFileModal.classList.add('hidden');
+                    logFileModal.classList.remove('flex');
+                }, 200);
+            }
+
+            window.downloadLogFile = function() {
+                fetch('/view_log_file')
+                    .then(response => response.json())
+                    .then(data => {
+                        const element = document.createElement('a');
+                        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(data.content));
+                        element.setAttribute('download', data.filename);
+                        element.style.display = 'none';
+                        document.body.appendChild(element);
+                        element.click();
+                        document.body.removeChild(element);
+                    })
+                    .catch(err => {
+                        alert('Error downloading log file.');
+                        console.error('Error:', err);
+                    });
+            }
+
+            // ============================================
+            // Start Attack Function
+            // ============================================
+            window.startAttack = function() {
+                const btn = document.getElementById('attack-btn');
+                const originalHTML = btn.innerHTML;
+                
+                // Set button to loading state
+                btn.innerHTML = '<span class="spinner"></span> <span class="ml-2">Executing...</span>';
+                btn.classList.add('opacity-75', 'cursor-not-allowed');
+                btn.disabled = true;
+
+                // Backend API call
+                fetch('/start_attack', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        showMessage(data.message, data.status === 'success' ? 'success' : 'error');
+                        updateLogs(); // Update logs immediately after attack
+                    })
+                    .catch(err => {
+                        showMessage('Network Error: Could not connect to backend.', 'error');
+                        console.error('Attack failed:', err);
+                    })
+                    .finally(() => {
+                        // Restore button to normal state
+                        btn.innerHTML = originalHTML;
+                        btn.classList.remove('opacity-75', 'cursor-not-allowed');
+                        btn.disabled = false;
+                    });
+            }
+
+            // ============================================
+            // Modal & Decryption Logic
+            // ============================================
+            window.showDecryptKeyForm = function() {
+                if (!modal) return;
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                // Add animation effect
+                setTimeout(() => {
+                    if (modalContent) {
+                        modalContent.classList.remove('scale-95', 'opacity-0');
+                        modalContent.classList.add('scale-100', 'opacity-100');
+                    }
+                }, 10);
+                document.getElementById('encrypt-key').focus();
+            }
+
+            window.closeDecryptKeyForm = function() {
+                if (!modal || !modalContent) return;
+                modalContent.classList.remove('scale-100', 'opacity-100');
+                modalContent.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                    document.getElementById('encrypt-key').value = '';
+                    document.getElementById('decrypt-key-error').classList.add('hidden');
+                }, 200);
+            }
+
+            window.submitDecryptKeyForm = function(event) {
+                event.preventDefault();
+                const keyField = document.getElementById('encrypt-key');
+                const key = keyField.value.trim();
+                const errorDiv = document.getElementById('decrypt-key-error');
+                const btn = document.getElementById('decrypt-submit-btn');
+
+                if (!key) {
+                    showErrorInModal('Encryption key cannot be empty!');
+                    return;
                 }
-                return;
-            }
 
-            const btn = event.target.querySelector('button[type="submit"]');
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = '<span class="spinner"></span> Verifying & Decrypting...';
-            btn.disabled = true;
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '<span class="spinner"></span> Processing...';
+                btn.disabled = true;
 
-            const formData = new FormData();
-            formData.append('key', key.trim());
+                const formData = new FormData();
+                formData.append('key', key);
 
-            fetch('/decrypt_with_key', { method: 'POST', body: formData })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showMessage(data.message, 'success');
-                        closeDecryptKeyForm();
-                        closeDecryptForm();
-                        updateLogs();
-                    } else {
-                        if (errorDiv) {
-                            errorDiv.textContent = data.message || 'Decryption failed';
-                            errorDiv.style.display = 'block';
+                // Send key to backend
+                fetch('/decrypt_with_key', { method: 'POST', body: formData })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success || data.status === 'success') {
+                            showMessage(data.message || 'Decryption successful!', 'success');
+                            closeDecryptKeyForm();
+                            updateLogs();
+                        } else {
+                            showErrorInModal(data.message || 'Invalid key or decryption failed.');
                         }
-                        showMessage('Invalid key or decryption failed', 'error');
-                    }
-                })
-                .catch(err => {
-                    if (errorDiv) {
-                        errorDiv.textContent = 'Error: ' + err.message;
-                        errorDiv.style.display = 'block';
-                    }
-                    showMessage('Error: ' + err.message, 'error');
-                })
-                .finally(() => {
-                    btn.innerHTML = originalHTML;
-                    btn.disabled = false;
-                });
-        }
-
-        // ============================================
-        setInterval(updateLogs, 5000);
-
-        // ============================================
-        // CLOSE MODAL ON ESCAPE KEY
-        // ============================================
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                closeDecryptForm();
+                    })
+                    .catch(err => {
+                        showErrorInModal('Error: Could not connect to the server.');
+                    })
+                    .finally(() => {
+                        btn.innerHTML = originalHTML;
+                        btn.disabled = false;
+                    });
             }
-        });
 
-        // ============================================
-        // LOAD LOGS ON PAGE LOAD
-        // ============================================
-        window.addEventListener('load', updateLogs);
+            window.showErrorInModal = function(msg) {
+                const errDiv = document.getElementById('decrypt-key-error');
+                errDiv.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i> ${msg}`;
+                errDiv.classList.remove('hidden');
+                errDiv.classList.add('fade-in');
+            }
+
+            // ============================================
+            // Toast Message System
+            // ============================================
+            window.showMessage = function(message, status) {
+                const container = document.getElementById('message-container');
+                const div = document.createElement('div');
+                
+                // Style based on status (Error: Red, Success: Green)
+                const isError = status === 'error';
+                const bgColor = isError ? 'bg-red-500/10' : 'bg-emerald-500/10';
+                const borderColor = isError ? 'border-red-500/30' : 'border-emerald-500/30';
+                const textColor = isError ? 'text-red-400' : 'text-emerald-400';
+                const icon = isError ? 'fa-triangle-exclamation' : 'fa-circle-check';
+
+                div.className = `flex items-center gap-3 p-4 border rounded-lg shadow-md fade-in ${bgColor} ${borderColor} ${textColor}`;
+                div.innerHTML = `
+                    <i class="fas ${icon} text-lg"></i>
+                    <span class="font-medium font-sans">${message}</span>
+                `;
+
+                container.innerHTML = '';
+                container.appendChild(div);
+
+                // Remove after 5 seconds
+                setTimeout(() => {
+                    div.style.opacity = '0';
+                    div.style.transform = 'translateY(-10px)';
+                    div.style.transition = 'all 0.3s ease';
+                    setTimeout(() => div.remove(), 300);
+                }, 5000);
+            }
+
+            // ============================================
+            // Update Logs Table
+            // ============================================
+            window.updateLogs = function() {
+                // Fetch logs from server
+                fetch('/get_logs')
+                    .then(response => {
+                        if(!response.ok) throw new Error('Network error');
+                        return response.json();
+                    })
+                    .then(data => {
+                        const logsBody = document.getElementById('logs-body');
+                        const logs = data.logs || [];
+                        
+                        if (logs.length === 0) {
+                            logsBody.innerHTML = `
+                                <div class="h-full flex flex-col items-center justify-center text-gray-500 space-y-4">
+                                    <i class="fas fa-radar animate-pulse text-4xl"></i>
+                                    <p>No attacks detected yet. Click "Start Simulation" to begin.</p>
+                                </div>
+                            `;
+                            return;
+                        }
+                        
+                        // Create new table with headers ONLY when there are logs
+                        let html = `
+                            <table class="w-full text-left whitespace-nowrap">
+                                <thead class="sticky top-0 bg-[#0a0f1c] z-10 shadow-sm text-gray-400">
+                                    <tr>
+                                        <th class="py-2 px-3 font-medium">Time</th>
+                                        <th class="py-2 px-3 font-medium">Event</th>
+                                        <th class="py-2 px-3 font-medium">Classification</th>
+                                        <th class="py-2 px-3 font-medium w-full">Message / Path</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-800">
+                        `;
+                        
+                        logs.forEach((log, index) => {
+                            const isRansom = log.classification && log.classification.toLowerCase() === 'ransomware';
+                            const badgeClass = isRansom 
+                                ? 'bg-red-500/20 text-red-400 border border-red-500/30' 
+                                : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+                            const rowAnim = index < 5 ? 'fade-in' : ''; // Animation only for top rows
+
+                            html += `
+                                <tr class="hover:bg-gray-800/50 transition-colors ${rowAnim}">
+                                    <td class="py-2.5 px-3 text-gray-400 text-xs">${escapeHtml(log.timestamp)}</td>
+                                    <td class="py-2.5 px-3">
+                                        <span class="text-cyber-blue">${escapeHtml(log.event)}</span>
+                                    </td>
+                                    <td class="py-2.5 px-3">
+                                        <span class="px-2 py-0.5 rounded text-xs ${badgeClass}">${escapeHtml(log.classification || 'Normal')}</span>
+                                    </td>
+                                    <td class="py-2.5 px-3 text-gray-300">
+                                        <div class="truncate max-w-md" title="${escapeHtml(log.path)}">
+                                            <span class="text-white">${escapeHtml(log.message)}</span><br>
+                                            <span class="text-gray-500 text-xs">${escapeHtml(log.path)}</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                        
+                        html += '</tbody></table>';
+                        logsBody.innerHTML = html;
+                    })
+                    .catch(err => {
+                        // If backend is not connected (e.g., local testing without server)
+                        console.log('Backend not connected, logs cannot be fetched.');
+                    });
+            }
+
+            window.escapeHtml = function(text) {
+                if(!text) return '';
+                const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+                return String(text).replace(/[&<>"']/g, m => map[m]);
+            }
+
+            // Close modal when Escape key is pressed
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    if (modal && !modal.classList.contains('hidden')) {
+                        closeDecryptKeyForm();
+                    }
+                    if (logFileModal && !logFileModal.classList.contains('hidden')) {
+                        closeLogFileModal();
+                    }
+                }
+            });
+
+            // Auto-update logs every 5 seconds
+            setInterval(updateLogs, 5000);
+            
+            // Load logs on page load
+            updateLogs();
+        });
     </script>
 </body>
 </html>

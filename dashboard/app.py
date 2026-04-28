@@ -157,6 +157,23 @@ def get_logs():
     return jsonify({"logs": logs})
 
 
+@app.route("/view_log_file", methods=["GET"])
+def view_log_file():
+    """API endpoint to get raw log file contents."""
+    if not os.path.exists(LOG_FILE):
+        return jsonify({"content": "", "filename": "activity_log.txt", "lines": 0})
+    
+    with open(LOG_FILE, "r", encoding="utf-8") as file:
+        content = file.read()
+    
+    lines = len(content.splitlines())
+    return jsonify({
+        "content": content,
+        "filename": "activity_log.txt",
+        "lines": lines
+    })
+
+
 @app.route("/decrypt_with_key", methods=["POST"])
 def decrypt_with_key():
     """Decrypt files using a provided encryption key (user enters key manually)."""
