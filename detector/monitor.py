@@ -4,10 +4,21 @@ from collections import deque
 from datetime import datetime
 import json
 from pathlib import Path
+import sys
 import time
 
 from watchdog.events import FileSystemEvent, FileSystemEventHandler, FileMovedEvent
 from watchdog.observers import Observer
+
+# Import blockchain for immutable logging
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from blockchain import (
+    initialize_blockchain,
+    get_blockchain,
+    log_suspicious_activity,
+    save_blockchain_to_file,
+    print_blockchain_summary
+)
 
 DETECTOR_DIR = Path(__file__).resolve().parent
 TEST_FOLDER = (DETECTOR_DIR / "../test_folder").resolve()
@@ -78,6 +89,13 @@ class RansomwareMonitor(FileSystemEventHandler):
 
         if change_count >= RAPID_CHANGE_THRESHOLD:
             print("⚠ Ransomware detected!")
+            # Log to blockchain
+            log_suspicious_activity(
+                file_path=str(path),
+                activity_type="rapid_changes",
+                severity="HIGH",
+                details=f"{note}; changes_in_10s={change_count}"
+            )
 
         self.stats["total_files_scanned"] = self.stats.get("total_files_scanned", 0) + 1
         if classification == "Ransomware":
@@ -107,6 +125,13 @@ class RansomwareMonitor(FileSystemEventHandler):
             note = f"file rename: {source.name} -> {destination.name}"
             if destination.suffix == ".locked":
                 note += "; .locked extension detected"
+                # Log .locked extension to blockchain
+                log_suspicious_activity(
+                    file_path=str(destination),
+                    activity_type="locked_extension",
+                    severity="HIGH",
+                    details=f"File renamed with .locked extension: {source.name} -> {destination.name}"
+                )
             self.process_event("renamed", destination, note)
 
     def on_created(self, event: FileSystemEvent) -> None:
@@ -116,10 +141,21 @@ class RansomwareMonitor(FileSystemEventHandler):
         note = "file created"
         if path.suffix == ".locked":
             note += "; .locked extension detected"
+            # Log .locked file creation to blockchain
+            log_suspicious_activity(
+                file_path=str(path),
+                activity_type="locked_file_created",
+                severity="HIGH",
+                details=f"New .locked file created: {path.name}"
+            )
         self.process_event("created", path, note)
 
 
 def start_monitor() -> None:
+    # Step 0: Initialize blockchain
+    initialize_blockchain(difficulty=2)
+    print("🔗 Blockchain initialized for immutable logging\n")
+    
     # Step 1: ensure watched folder and log files exist.
     TEST_FOLDER.mkdir(parents=True, exist_ok=True)
     ensure_log_files()
@@ -139,6 +175,14 @@ def start_monitor() -> None:
             time.sleep(1)
     except KeyboardInterrupt:
         observer.stop()
+        print("\n\nMonitoring stopped. Generating blockchain report...\n")
+        
+        # Export blockchain report
+        blockchain_report_path = DETECTOR_DIR.parent / "logs" / "blockchain_report.json"
+        from blockchain import export_blockchain_report, print_blockchain_summary
+        export_blockchain_report(blockchain_report_path)
+        print_blockchain_summary()
+        
     observer.join()
 
 

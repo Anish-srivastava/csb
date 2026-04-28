@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import json
 from flask import Flask, redirect, render_template, request, url_for, jsonify
 
 app = Flask(__name__, template_folder="templates")
@@ -240,7 +241,6 @@ def decrypt_with_key():
     
     except Exception as e:
         return jsonify({"success": False, "message": f"Error: {str(e)[:100]}"})
-
 
 
 if __name__ == "__main__":
